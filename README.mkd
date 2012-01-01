@@ -1,0 +1,2 @@
+# About
+Problems and solutions from book "Programming Challenges"
