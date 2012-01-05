@@ -87,7 +87,7 @@ main ( int argc, char *argv[] )
         p = elephants + i;
         for (int j = 0; j < i && elephants[j].iq < p->iq; ++j) {
             if (elephants[j].weight > p->weight 
-                    && states[j].value + 1 > states[i].value) {
+                    && states[j].value >= states[i].value) {
                 states[i].value = states[j].value + 1;
                 states[i].parent = j;
             }

@@ -34,7 +34,9 @@ for ((j = 0; j < 10; ++j)); do
         echo $RANDOM $RANDOM >> 'tin';
     done
 
+    cat 'tin' | ./el > "$tmp"
     cat 'tin' | ./elephant > 'tout'
+    paste "$tmp" 'tout' | head -n 1 | awk '($1 != $2) {print $1, $2; exit 1;}'
     awk 'BEGIN {
             for(i=1; getline < "tin"; ++i) {
                 wt[i] = $1;
