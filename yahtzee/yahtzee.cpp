@@ -140,6 +140,26 @@ int get_score(vector<int> &scores, Hand *hands, State state, int n) {
 	return maxsc;
 }
 
+void reconstruct(vector<int> &scores, Hand *hands,
+		State state, int n, int *bonus) {
+	for (int i = 0; i < N; ++i) {
+		if (!(state & (0x1 << i))) {
+			int s = score(hands + i, n);
+			State newstate = (state | (0x1 << i));
+			int extra = 0;
+			if ((n == 5) && (scores[state] >= 35+63)) {
+				*bonus = 35;
+				extra = *bonus;
+			}
+			if (s + scores[newstate] + extra == scores[state]) {
+				reconstruct(scores, hands, newstate, n-1, bonus);
+				printf("%d ", s);
+				break;
+			}
+		}
+	}
+}
+
 /* 
  * ===  FUNCTION  ============================================================
  *         Name:  main
@@ -164,8 +184,11 @@ main ( int argc, char *argv[] )
 			// with the first n categories, where n is the number of 0-bit in
 			// state.
 			vector<int> scores(1<<N, NaN);
-			int res = get_score(scores, hands, 0, N-1);
-			printf("%d\n", get_score(scores, hands, 0, N-1));
+			int best_score = get_score(scores, hands, 0, N-1);
+			int bonus = 0;
+			scores[(1<<N) -1] = 0;
+			reconstruct(scores, hands, 0, N-1, &bonus);
+			printf("%d %d\n", bonus, best_score);
 			//printf("%d\n", t[0]);
 			//for (int k = 0; k < N; ++k) {
 				//printf("hand-%d, category-%d: %d\n", 0, k, score(hands, k));
