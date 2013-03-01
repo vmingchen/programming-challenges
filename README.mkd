@@ -1,2 +1,4 @@
 # About
 Problems and solutions from book "Programming Challenges"
+
+A great site for reference: https://github.com/lbv/pc-code
