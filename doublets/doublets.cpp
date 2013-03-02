@@ -20,10 +20,12 @@
 #include	<algorithm>
 
 using namespace std;
+const int MAXL = 16;
 
-//inline int make_node(int id, int dist) { return (id | (dist << 16)); }
-//inline int get_id(int node) { return node & ((1 << 16) - 1); }
-//inline int get_dist(int node) { return node >> 16; }
+// by default make_heap is a max-heap, (MAXL-dist) convert min to max
+inline int make_node(int id, int dist) { return (id | ((MAXL-dist) << 16)); }
+inline int get_id(int node) { return node & ((1 << 16) - 1); }
+inline int get_dist(int node) { return MAXL - (node >> 16); }
 
 // a should be of the same length as b
 int str_distance(const string &a, const string &b) {
@@ -35,32 +37,30 @@ int str_distance(const string &a, const string &b) {
 	return d;
 }
 
-bool solve(vector<vector<int> > &adj, int src, int dst,
+bool solve(const vector<list<int> > &adj, int src, int dst,
 		vector<int> &path) {
 	vector<bool> visited(adj.size(), false);
 	vector<unsigned char> dists(adj.size(), -1);	// distances to dest
 	dists[dst] = 0;
-	vector<int> heap(1, src);
+	vector<int> heap(1, make_node(dst, 0));
 	while (! heap.empty()) {
-		int uid = heap.front();
-		//int unode = heap.front();
-		//int ump = get_dist(node);
-		//int uid = get_id(node);
-		if (visited[uid]) continue;
-		for (unsigned i = 0; i < adj[uid].size(); ++i) {
-			int vid = adj[uid][i];
-			//int vmp = get_dist(vnode);
-			//int vid = get_id(vnode);
-			if (ump + 1 < dists[vid]) {
-				//dists[vid] = ump + vmp;
-				//heap.push_back(make_node(vid, ump + vmp));
-				dists[vid] = ump + 1;
-				heap.push_heap(vid);
-				push_heap(heap.begin(), heap.end());
-			}
-		}
+		int unode = heap.front();
 		pop_heap(heap.begin(), heap.end());
-		visited[uid] = true;
+		heap.pop_back();
+		int uid = get_id(unode);
+		int ump = get_dist(unode);
+		if (! visited[uid]) {
+			for (list<int>::const_iterator it = adj[uid].begin(); 
+					it != adj[uid].end(); ++it) {
+				int vid = *it;
+				if (ump + 1 < dists[vid]) {
+					dists[vid] = ump + 1;
+					heap.push_back(make_node(vid, ump+1));
+					push_heap(heap.begin(), heap.end());
+				}
+			}
+			visited[uid] = true;
+		}
 	}
 	unsigned mpath = dists[src];
 	if (mpath != (unsigned char)(-1)) {
@@ -68,69 +68,32 @@ bool solve(vector<vector<int> > &adj, int src, int dst,
 		int id = src;
 		path.push_back(id);
 		while (id != dst) {
-			for (unsigned i = 0; i < adj[id].size(); ++i) {
-				int nid = adj[id][i];
+			for (list<int>::const_iterator it = adj[id].begin(); 
+					it != adj[id].end(); ++it) {
+				int nid = *it;
 				if (dists[nid] == mpath-1) {
 					id = nid;
 					path.push_back(nid);
+					--mpath;
 					break;
 				}
 			}
 		}
+		return true;
 	}
 	return false;
 }
 
-unsigned hash(const char *p, int mask_index) {
-	unsigned h = 17;
-	for (int i = 0; *p; ++i, ++p) {
-		if (i != mask_index) {
-			h = (h << 4) + (*p - 'a');
-		}
-	}
-	return h;
-}
-
 // l: length of words in dict
-void build_adj(int l, const vector<string> &dict, vector<vector<int> > &adj) {
+void build_adj(int l, const vector<string> &dict, vector<list<int> > &adj) {
 	for (unsigned i = 0; i < dict.size(); ++i) {
-		vector<int> &db = adj[i];
 		for (unsigned j = i + 1; j < dict.size(); ++j) {
 			if (str_distance(dict[i], dict[j]) == 1) {
-				db.push_back(j);
-				//db.push_back(make_node(j, 1));
+				adj[i].push_back(j);
+				adj[j].push_back(i);
 			}
 		}
 	}
-	//for (int i = 0; i < l; ++i) {
-		//// consider all doubles, of which the i-th char is different
-		//const unsigned H = (1 << 15);
-		//vector<list<int> > hashmap(H);
-		//// build hashes for all words when the i-th char is masked
-		//for (unsigned j = 0; j < dict.size(); ++j) {
-			//unsigned h = hash(dict[j].c_str(), i) & (H - 1);
-			//hashmap[h].push_back(j);
-		//}
-		//vector<list<int> >::iterator it = hashmap.begin();
-		//for (; it != hashmap.end(); ++it) {
-			//if (it->size() < 2)
-				//continue;
-			//list<int> &cand = *it;		// doublets candidates
-			//// match all candidates, which have the same hash
-			//for (list<int>::iterator lit = cand.begin(); 
-					//lit != cand.end(); ++lit) {
-				//int j = *lit;
-				//list<int>::iterator nit = lit;
-				//for (++nit; nit != cand.end(); ++nit) {
-					//int k = *nit;
-					//if (str_distance(dict[j], dict[k]) == 1) {
-						//adj[j].push_back(k);
-						//adj[k].push_back(j);
-					//}
-				//}
-			//}
-		//}
-	//}
 }
 
 /* 
@@ -144,10 +107,10 @@ main ( int argc, char *argv[] )
 { 
 	vector< vector<string> > dicts(16 + 1);
 	string str;
-	while (cin >> str && str.length() > 0) {
+	while (getline(cin, str) && str.length() > 0) {
 		dicts[str.length()].push_back(str);
 	}
-	vector< vector<vector<int> > > adjlists(16 + 1);
+	vector< vector<list<int> > > adjlists(16 + 1);
 	for (int i = 1; i <= 16; ++i) {
 		vector<string> &dict = dicts[i];
 		if (dict.size() <= 1)
@@ -174,24 +137,26 @@ main ( int argc, char *argv[] )
 	}
 
 	string a, b;
-	while (cin >> a >> b) {
+	for (int n = 0; cin >> a >> b; ++n) {
 		unsigned len = a.length();
 		vector<string> &dict = dicts[len];
 		vector<string>::iterator beg = dict.begin();
 		vector<string>::iterator end = dict.end();
+		if (n > 0) cout << endl;
 		if (a.length() != b.length() 
-				|| ! binary_search(beg, end(), a)
-				|| ! binary_search(beg, end(), b)) {
+				|| ! binary_search(beg, end, a)
+				|| ! binary_search(beg, end, b)) {
 			cout << "No solution." << endl;
 		} else {
 			vector<int> path;
 			int i = std::distance(beg, lower_bound(beg, end, a));
 			int j = std::distance(beg, lower_bound(beg, end, b));
-			solve(adjlists[len], i, j, path);
-			for (unsigned i = 0; i < path.size(); ++i)
-				cout << dict[path[i]] << endl;
-		} else {
-			cout << "No solution." << endl;
+			if (solve(adjlists[len], i, j, path)) {
+				for (unsigned i = 0; i < path.size(); ++i)
+					cout << dict[path[i]] << endl;
+			} else {
+				cout << "No solution." << endl;
+			}
 		}
 	}
 
