@@ -1,4 +1,7 @@
 # About
 Problems and solutions from book "Programming Challenges"
 
+- premature optimization is the root of all evil
+
 A great site for reference: https://github.com/lbv/pc-code
+
