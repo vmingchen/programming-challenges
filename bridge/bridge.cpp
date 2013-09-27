@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < n; ++i) {
       cin >> people[i];
     }
+    sort(people.begin(), people.end());
     solve(n, people);
     if (ntests > 1) cout << endl;   // extra blank line ending a result
   }
